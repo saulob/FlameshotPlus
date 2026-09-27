@@ -202,6 +202,7 @@ signals:
     void error() const;
     void errorResolved() const;
     void fileChanged() const;
+    void settingChanged() const;
 
 private:
     mutable QSettings m_settings;

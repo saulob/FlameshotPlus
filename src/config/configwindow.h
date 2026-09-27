@@ -26,6 +26,7 @@ protected:
 
 private:
     QTabWidget* m_tabWidget;
+    bool m_updatingChildren = false;
 
     FileNameEditor* m_filenameEditor;
     QWidget* m_filenameEditorTab;

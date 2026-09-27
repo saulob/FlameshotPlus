@@ -55,15 +55,12 @@ bool verifyLaunchFile()
  *             misbehave.
  */
 #define OPTION(KEY, TYPE)                                                      \
-    {                                                                          \
-        QStringLiteral(KEY), QSharedPointer<ValueHandler>(new TYPE)            \
-    }
+    { QStringLiteral(KEY), QSharedPointer<ValueHandler>(new TYPE) }
 
 #define SHORTCUT(NAME, DEFAULT_VALUE)                                          \
-    {                                                                          \
-        QStringLiteral(NAME), QSharedPointer<KeySequence>(new KeySequence(     \
-                                QKeySequence(QLatin1String(DEFAULT_VALUE))))   \
-    }
+    { QStringLiteral(NAME),                                                    \
+      QSharedPointer<KeySequence>(                                             \
+        new KeySequence(QKeySequence(QLatin1String(DEFAULT_VALUE)))) }
 
 /**
  * This map contains all the information that is needed to parse, verify and
@@ -235,7 +232,7 @@ ConfigHandler::ConfigHandler()
         QObject::connect(m_configWatcher.data(),
                          &QFileSystemWatcher::fileChanged,
                          [](const QString& fileName) {
-                             emit getInstance()->fileChanged();
+                             emit getInstance() -> fileChanged();
 
                              if (QFile(fileName).exists()) {
                                  m_configWatcher->addPath(fileName);
@@ -410,14 +407,19 @@ QString ConfigHandler::filenamePatternDefault()
 
 void ConfigHandler::setDefaultSettings()
 {
+    bool changed = false;
     for (const auto& key : m_settings.allKeys()) {
         if (isShortcut(key)) {
             // Do not reset Shortcuts
             continue;
         }
         m_settings.remove(key);
+        changed = true;
     }
     m_settings.sync();
+    if (changed) {
+        emit getInstance() -> settingChanged();
+    }
 }
 
 QString ConfigHandler::configFilePath() const
@@ -446,6 +448,7 @@ bool ConfigHandler::setShortcut(const QString& actionName,
     }
 
     bool errorFlag = false;
+    bool changed = false;
 
     m_settings.beginGroup(CONFIG_GROUP_SHORTCUTS);
     if (shortcut.isEmpty()) {
@@ -468,10 +471,15 @@ bool ConfigHandler::setShortcut(const QString& actionName,
                 goto done;
             }
         }
-        m_settings.setValue(actionName, KeySequence().value(shortcut));
+        auto val = KeySequence().value(shortcut);
+        changed = m_settings.value(actionName) != val;
+        m_settings.setValue(actionName, val);
     }
 done:
     m_settings.endGroup();
+    if (changed) {
+        emit getInstance() -> settingChanged();
+    }
     return !errorFlag;
 }
 
@@ -502,7 +510,11 @@ void ConfigHandler::setValue(const QString& key, const QVariant& value)
         // don't let the file watcher initiate another error check
         m_skipNextErrorCheck = true;
         auto val = valueHandler(key)->representation(value);
+        bool changed = m_settings.value(key) != val;
         m_settings.setValue(key, val);
+        if (changed) {
+            emit getInstance() -> settingChanged();
+        }
     }
 }
 
@@ -527,12 +539,21 @@ QVariant ConfigHandler::value(const QString& key) const
 
 void ConfigHandler::remove(const QString& key)
 {
+    bool changed = m_settings.contains(key);
     m_settings.remove(key);
+    if (changed) {
+        emit getInstance() -> settingChanged();
+    }
 }
 
 void ConfigHandler::resetValue(const QString& key)
 {
-    m_settings.setValue(key, valueHandler(key)->fallback());
+    auto val = valueHandler(key)->fallback();
+    bool changed = m_settings.value(key) != val;
+    m_settings.setValue(key, val);
+    if (changed) {
+        emit getInstance() -> settingChanged();
+    }
 }
 
 QSet<QString>& ConfigHandler::recognizedGeneralOptions()
@@ -735,12 +756,12 @@ void ConfigHandler::setErrorState(bool error) const
     if (!hadError && m_hasError) {
         QString msg = errorMessage();
         AbstractLogger::error() << msg;
-        emit getInstance()->error();
+        emit getInstance() -> error();
     } else if (hadError && !m_hasError) {
         auto msg =
           tr("You have successfully resolved the configuration error.");
         AbstractLogger::info() << msg;
-        emit getInstance()->errorResolved();
+        emit getInstance() -> errorResolved();
     }
 }
 
