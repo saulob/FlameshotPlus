@@ -6,6 +6,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QGroupBox>
@@ -124,7 +125,7 @@ void GeneralConf::_updateComponents(bool allowEmptySavePath)
     m_undoLimit->setValue(config.undoLimit());
 
     if (allowEmptySavePath || !config.savePath().isEmpty()) {
-        m_savePath->setText(config.savePath());
+        m_savePath->setText(QDir::toNativeSeparators(config.savePath()));
     }
 
     m_showTray->setChecked(!config.disabledTrayIcon());
@@ -247,8 +248,8 @@ void GeneralConf::resetConfiguration()
       tr("Are you sure you want to reset the configuration?"),
       QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        m_savePath->setText(
-          QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+        m_savePath->setText(QDir::toNativeSeparators(
+          QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)));
         ConfigHandler().setDefaultSettings();
         _updateComponents(true);
     }
@@ -528,7 +529,7 @@ void GeneralConf::initSaveAfterCopy()
     auto* pathLayout = new QHBoxLayout();
 
     QString path = ConfigHandler().savePath();
-    m_savePath = new QLineEdit(path, this);
+    m_savePath = new QLineEdit(QDir::toNativeSeparators(path), this);
     m_savePath->setDisabled(true);
     QString foreground = this->palette().windowText().color().name();
     m_savePath->setStyleSheet(QStringLiteral("color: %1").arg(foreground));
@@ -692,7 +693,7 @@ void GeneralConf::changeSavePath()
     QString path = ConfigHandler().savePath();
     path = chooseFolder(path);
     if (!path.isEmpty()) {
-        m_savePath->setText(path);
+        m_savePath->setText(QDir::toNativeSeparators(path));
         ConfigHandler().setSavePath(path);
     }
 }
