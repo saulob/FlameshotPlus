@@ -8,10 +8,14 @@
 #include "config/uicoloreditor.h"
 #include "utils/confighandler.h"
 
+#include <QCollator>
 #include <QDirIterator>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QLabel>
+#include <QLocale>
 #include <QMessageBox>
+#include <algorithm>
 
 VisualsEditor::VisualsEditor(QWidget* parent)
   : QWidget(parent)
@@ -122,25 +126,71 @@ void VisualsEditor::initTranslations()
             }
         }
     }
-    translations.sort();
-    translations.push_front(QStringLiteral("auto"));
-    m_selectTranslation->addItems(translations);
+    // Pairs of display name and locale code, sorted by the display name
+    QList<QPair<QString, QString>> languages;
+    for (const QString& code : translations) {
+        // Display the locale's native name; the code stays as item data
+        const QLocale locale(code);
+        const QString languageCode = code.section(QLatin1Char('_'), 0, 0);
+        const QString territoryCode = code.section(QLatin1Char('_'), 1, 1);
+        // Prefer the endonym shared by most locales of this language, so a
+        // bare code like "en" is not shown as a regional variant
+        QHash<QString, int> endonyms;
+        for (const QLocale& l : QLocale::matchingLocales(
+               locale.language(), locale.script(), QLocale::AnyTerritory)) {
+            ++endonyms[l.nativeLanguageName()];
+        }
+        QString name = locale.nativeLanguageName();
+        for (auto it = endonyms.cbegin(); it != endonyms.cend(); ++it) {
+            if (it.value() > endonyms.value(name)) {
+                name = it.key();
+            }
+        }
+        if (name.isEmpty() ||
+            locale.language() != QLocale::codeToLanguage(languageCode)) {
+            name = code;
+        } else {
+            // Capitalize only the first character (may be a surrogate pair)
+            const int first = name.at(0).isHighSurrogate() ? 2 : 1;
+            name = locale.toUpper(name.left(first)) + name.mid(first);
+            if (!territoryCode.isEmpty() &&
+                locale.territory() == QLocale::codeToTerritory(territoryCode) &&
+                !locale.nativeTerritoryName().isEmpty()) {
+                name +=
+                  QStringLiteral(" (%1)").arg(locale.nativeTerritoryName());
+            }
+        }
+        languages.append({ name, code });
+    }
+    QCollator collator;
+    std::sort(languages.begin(),
+              languages.end(),
+              [&collator](const auto& a, const auto& b) {
+                  return collator.compare(a.first, b.first) < 0;
+              });
+    m_selectTranslation->addItem(tr("Automatic (System language)"),
+                                 QStringLiteral("auto"));
+    for (const auto& item : languages) {
+        m_selectTranslation->addItem(item.first, item.second);
+    }
 
     QString language = ConfigHandler().value("uiLanguage").toString();
     m_selectTranslation->setCurrentIndex(
-      m_selectTranslation->findText(language));
+      m_selectTranslation->findData(language));
 
-    connect(m_selectTranslation,
-            &QComboBox::currentTextChanged,
+    connect(
+      m_selectTranslation, &QComboBox::activated, this, [this](int index) {
+          const QString code = m_selectTranslation->itemData(index).toString();
+          if (code == ConfigHandler().uiLanguage()) {
+              return;
+          }
+          ConfigHandler().setUiLanguage(code);
+          // TODO: Retranslate UI without restart
+          QMessageBox::information(
             this,
-            [this](const QString& text) {
-                ConfigHandler().setUiLanguage(text);
-                // TODO: Retranslate UI without restart
-                QMessageBox::information(
-                  this,
-                  tr("Configuration"),
-                  tr("Flameshot must be restarted to apply these changes!"));
-            });
+            tr("Configuration"),
+            tr("Flameshot must be restarted to apply these changes!"));
+      });
 
     localLayout->addWidget(m_selectTranslation);
     localLayout->addStretch();
