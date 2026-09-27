@@ -5,9 +5,9 @@
         <img src="data/img/app/org.flameshot.Flameshot.svg" alt="Flameshot" />
       </a>
       <br />
-      Flameshot
+      FlameshotPlus
     </h1>
-    <h4>Powerful yet simple to use screenshot software.</h4>
+    <h4>My personal Flameshot fork with Windows-focused fixes and quality-of-life improvements.</h4>
   </p>
   <p>
     <a href="https://github.com/flameshot-org/flameshot/actions?query=workflow%3APackaging%28Linux%29">
@@ -47,7 +47,58 @@
   </p>
 </div>
 
+## FlameshotPlus
 
+FlameshotPlus is my personal fork of [Flameshot](https://github.com/flameshot-org/flameshot)
+
+I created it to collect improvements and quality-of-life changes that I wanted while using Flameshot myself, especially on Windows
+
+The goal is to stay close to upstream Flameshot while experimenting with small fixes and usability improvements that make the application work better for my own daily use
+
+This is not an official Flameshot release
+
+### Improvements currently included
+
+- **HDR screenshot capture on Windows**
+  - Improves screenshot capture when Windows HDR is enabled
+  - Prevents the washed-out appearance produced by the normal SDR capture path
+
+- **Automatic subfolders in filename patterns**
+  - Filename patterns can create relative subdirectories automatically
+  - Example: `%Y/%m/%F_%H-%M` can organize screenshots by year and month
+  - Includes a Subfolder button in the Filename Editor
+
+- **Improved configuration window behavior on High DPI displays**
+  - Prevents the Configuration window from becoming larger than the available screen area
+  - Adds scrolling when necessary instead of forcing an oversized window
+
+- **Configuration window fixes after DPI changes**
+  - Improves window resizing when moving between displays or changing Windows scaling
+  - Fixes incorrect geometry and black/unused areas after DPI changes
+
+- **Native Windows path display**
+  - Displays Windows paths using native backslashes in the Configuration UI
+  - Internal Qt path handling remains unchanged
+
+- **Friendlier language names**
+  - Makes language choices easier to understand in the UI
+  - Keeps locale codes available where useful while presenting clearer names
+
+- **Configuration autosave feedback**
+  - Makes it clear that most settings are saved automatically
+  - Shows temporary Saved feedback after a configuration change
+  - Keeps the Filename Editor behavior explicit because it still uses its own Save action
+
+### Upstream contributions
+
+Some of these improvements have also been submitted to the original Flameshot project
+
+- [#4972 - Add automatic subdirectories to filename patterns](https://github.com/flameshot-org/flameshot/pull/4972)
+- [#4973 - Fix configuration window sizing on high DPI displays](https://github.com/flameshot-org/flameshot/pull/4973)
+- [#4974 - Fix washed-out HDR screenshots on Windows](https://github.com/flameshot-org/flameshot/pull/4974)
+- [#4975 - Fix configuration window after DPI changes](https://github.com/flameshot-org/flameshot/pull/4975)
+
+FlameshotPlus will continue to follow upstream Flameshot while keeping the improvements that are useful for my own setup
 
 ## Preview
 
