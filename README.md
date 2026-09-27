@@ -1,7 +1,7 @@
 <div align="center">
   <p>
     <h1>
-      <a href="https://github.com/flameshot-org/flameshot">
+      <a href="https://github.com/saulob/FlameshotPlus">
         <img src="data/img/app/org.flameshot.Flameshot.svg" alt="Flameshot" />
       </a>
       <br />
@@ -60,6 +60,7 @@ This is not an official Flameshot release
 ### Improvements currently included
 
 - **HDR screenshot capture on Windows**
+  - The main Windows-focused improvement in FlameshotPlus
   - Improves screenshot capture when Windows HDR is enabled
   - Prevents the washed-out appearance produced by the normal SDR capture path
 
