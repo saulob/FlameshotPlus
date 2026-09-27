@@ -15,6 +15,7 @@
 #include <QApplication>
 #include <QDialogButtonBox>
 #include <QFileSystemWatcher>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
@@ -22,6 +23,7 @@
 #include <QSizePolicy>
 #include <QTabBar>
 #include <QTextStream>
+#include <QTimer>
 #include <QVBoxLayout>
 
 // Scroll area for tab content that cannot scroll by itself. It takes the size
@@ -87,6 +89,23 @@ ConfigWindow::ConfigWindow(QWidget* parent)
 #endif
     layout->addWidget(m_tabWidget);
 
+    auto* footerLayout = new QHBoxLayout();
+    auto* autoSaveLabel = new QLabel(this);
+    autoSaveLabel->setWordWrap(true);
+    auto* savedLabel = new QLabel(tr("Saved"), this);
+    auto savedSizePolicy = savedLabel->sizePolicy();
+    savedSizePolicy.setRetainSizeWhenHidden(true);
+    savedLabel->setSizePolicy(savedSizePolicy);
+    savedLabel->hide();
+    footerLayout->addWidget(autoSaveLabel, 1);
+    footerLayout->addWidget(savedLabel);
+    layout->addLayout(footerLayout);
+
+    auto* savedTimer = new QTimer(this);
+    savedTimer->setSingleShot(true);
+    savedTimer->setInterval(3000);
+    connect(savedTimer, &QTimer::timeout, savedLabel, &QLabel::hide);
+
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(GlobalValues::iconPath()));
     setWindowTitle(tr("Configuration"));
@@ -94,7 +113,11 @@ ConfigWindow::ConfigWindow(QWidget* parent)
     connect(ConfigHandler::getInstance(),
             &ConfigHandler::fileChanged,
             this,
-            &ConfigWindow::updateChildren);
+            [this]() {
+                m_updatingChildren = true;
+                emit updateChildren();
+                m_updatingChildren = false;
+            });
 
     QColor background = this->palette().window().color();
     bool isDark = ColorUtils::colorIsDark(background);
@@ -159,6 +182,29 @@ ConfigWindow::ConfigWindow(QWidget* parent)
     initErrorIndicator(m_filenameEditorTab, m_filenameEditor);
     initErrorIndicator(m_generalConfigTab, m_generalConfig);
     initErrorIndicator(m_shortcutsTab, m_shortcuts);
+
+    auto updateFooter =
+      [this, autoSaveLabel, savedLabel, savedTimer](int index) {
+          savedTimer->stop();
+          savedLabel->hide();
+          autoSaveLabel->setText(
+            m_tabWidget->widget(index) == m_filenameEditorTab
+              ? tr("Changes here are saved when you click Save")
+              : tr("Changes are saved automatically"));
+      };
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, updateFooter);
+    updateFooter(m_tabWidget->currentIndex());
+
+    connect(ConfigHandler::getInstance(),
+            &ConfigHandler::settingChanged,
+            this,
+            [this, savedLabel, savedTimer]() {
+                if (m_updatingChildren) {
+                    return;
+                }
+                savedLabel->show();
+                savedTimer->start();
+            });
 }
 
 void ConfigWindow::fitToScreen(const QRect& availableGeometry)

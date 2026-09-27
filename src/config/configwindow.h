@@ -31,6 +31,7 @@ private:
 
     QTabWidget* m_tabWidget;
     QList<TabScrollArea*> m_scrollAreas;
+    bool m_updatingChildren = false;
 
     FileNameEditor* m_filenameEditor;
     QWidget* m_filenameEditorTab;

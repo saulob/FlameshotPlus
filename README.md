@@ -175,6 +175,7 @@ On minimal X11 window managers (i3, dwm, xmonad, bspwm, ...), capturing may fail
 ### CLI configuration
 
 You can use the graphical menu to configure Flameshot, but alternatively you can use your terminal or scripts to do so.
+Most configuration changes made in the settings window are saved automatically. The Filename Editor provides an explicit Save button.
 
 - Open the configuration menu:
 
